@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f8f5;
+  --foreground: #17201d;
+  --surface: #ffffff;
+  --muted: #63706b;
+  --border: #dce3df;
+  --brand: #145b4b;
+  --brand-strong: #0d4337;
+  --accent: #e5f2ed;
+  --danger: #a92f2f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid #2a806c;
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #b9ded3;
+}
+
+.tiptap {
+  min-height: 28rem;
+  outline: none;
+}
+
+.tiptap p,
+.agreement-document p {
+  margin: 0.8rem 0;
+  line-height: 1.75;
+}
+
+.tiptap h1,
+.agreement-document h1 {
+  margin: 1.5rem 0 0.8rem;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.tiptap h2,
+.agreement-document h2 {
+  margin: 1.4rem 0 0.6rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.tiptap h3,
+.agreement-document h3 {
+  margin: 1.2rem 0 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.tiptap ul,
+.tiptap ol,
+.agreement-document ul,
+.agreement-document ol {
+  margin: 0.8rem 0;
+  padding-left: 1.6rem;
+}
+
+.tiptap ul,
+.agreement-document ul { list-style: disc; }
+.tiptap ol,
+.agreement-document ol { list-style: decimal; }
+
+.tiptap p.is-editor-empty:first-child::before {
+  float: left;
+  height: 0;
+  color: var(--muted);
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .print-preview,
+  .print-preview * { visibility: visible; }
+  .print-preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    border: 0;
+    box-shadow: none;
+  }
+}
