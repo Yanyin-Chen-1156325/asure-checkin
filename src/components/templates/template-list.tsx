@@ -19,6 +19,16 @@ async function fetchTemplates(): Promise<TemplateSummary[]> {
   return ((await response.json()) as { templates: TemplateSummary[] }).templates;
 }
 
+async function fetchTemplatesWithDefault(): Promise<TemplateSummary[]> {
+  let templates = await fetchTemplates();
+  if (templates.length === 0) {
+    const response = await fetch("/api/templates/default", { method: "POST" });
+    if (!response.ok) throw new Error(await failure(response));
+    templates = await fetchTemplates();
+  }
+  return templates;
+}
+
 export function TemplateList() {
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [error, setError] = useState("");
@@ -26,15 +36,18 @@ export function TemplateList() {
   const [pending, setPending] = useState(false);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      setTemplates(await fetchTemplates());
+      setTemplates(await fetchTemplatesWithDefault());
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Templates could not be loaded."); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     let active = true;
-    void fetchTemplates().then((loaded) => { if (active) setTemplates(loaded); })
+    void fetchTemplatesWithDefault()
+      .then((loaded) => { if (active) setTemplates(loaded); })
       .catch((caught: unknown) => { if (active) setError(caught instanceof Error ? caught.message : "Templates could not be loaded."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -65,13 +78,25 @@ export function TemplateList() {
 
   return (
     <div className="mt-8 space-y-6">
-      {error ? <p className="rounded-xl bg-red-50 p-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
+      {error ? (
+        <div className="flex flex-col items-start gap-3 rounded-xl bg-red-50 p-4 text-sm text-[var(--danger)] sm:flex-row sm:items-center sm:justify-between" role="alert">
+          <p>{error}</p>
+          <button className="min-h-10 shrink-0 rounded-lg border border-current px-4 font-bold disabled:opacity-60" disabled={loading} onClick={() => void load()} type="button">
+            {loading ? "Retrying…" : "Retry"}
+          </button>
+        </div>
+      ) : null}
       <form className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm sm:flex-row" onSubmit={create}>
         <label className="sr-only" htmlFor="template-name">Agreement name</label>
         <input className="min-h-12 flex-1 rounded-xl border border-[var(--border)] px-4" id="template-name" maxLength={200} name="name" placeholder="New agreement name" required />
         <button className="min-h-12 rounded-xl bg-[var(--brand)] px-5 font-bold text-white disabled:opacity-60" disabled={pending} type="submit">Create draft</button>
       </form>
-      {loading ? <p className="text-[var(--muted)]">Loading templates…</p> : null}
+      {loading ? (
+        <div className="flex min-h-24 items-center justify-center gap-3 text-[var(--muted)]" role="status">
+          <span aria-hidden="true" className="size-7 animate-spin rounded-full border-3 border-[var(--border)] border-t-[var(--brand)]" />
+          <span className="font-semibold">Loading templates…</span>
+        </div>
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-2">
         {templates.map((template) => (
           <article className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm" key={template.id}>

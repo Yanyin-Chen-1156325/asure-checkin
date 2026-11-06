@@ -8,6 +8,7 @@ export type GuestSchemaMapping = Readonly<{
   emailType: "email" | "rich_text";
   statusType: "select" | "status";
   initialStatusName: string;
+  signedStatusName: string;
 }>;
 
 export function guestSchemaProblems(properties: Properties): string[] {
@@ -16,6 +17,9 @@ export function guestSchemaProblems(properties: Properties): string[] {
     ["Name", ["title"]], ["Arrival Date", ["date"]], ["Type", ["select"]],
     ["Email", ["email", "rich_text"]], ["Phone", ["phone_number"]], ["Vehicle", ["rich_text"]],
     ["Signing Status", ["status", "select"]],
+    ["Signed PDF", ["files"]],
+    ["Signed At", ["date"]], ["Template ID", ["rich_text"]], ["Template Version", ["number"]],
+    ["Signing ID", ["rich_text"]], ["Agreement Hash", ["rich_text"]], ["PDF Upload ID", ["rich_text"]], ["Last Error", ["rich_text"]],
   ];
   for (const [name, expected] of required) {
     const actual = properties[name]?.type;
@@ -29,11 +33,15 @@ export function guestSchemaProblems(properties: Properties): string[] {
     if (missing.length) problems.push(`Type is missing options: ${missing.join(", ")}`);
   }
   const status = properties["Signing Status"];
-  if (status?.type === "status" && !status.status.options.some((option) => option.name === "Not started")) {
-    problems.push("Signing Status is missing option: Not started");
+  if (status?.type === "status") {
+    const available = new Set(status.status.options.map((option) => option.name));
+    const missing = ["Not started", "Done"].filter((option) => !available.has(option));
+    if (missing.length) problems.push(`Signing Status is missing options: ${missing.join(", ")}`);
   }
-  if (status?.type === "select" && !status.select.options.some((option) => option.name === "pending")) {
-    problems.push("Signing Status is missing option: pending");
+  if (status?.type === "select") {
+    const available = new Set(status.select.options.map((option) => option.name));
+    const missing = ["pending", "signed"].filter((option) => !available.has(option));
+    if (missing.length) problems.push(`Signing Status is missing options: ${missing.join(", ")}`);
   }
   return problems;
 }
@@ -46,5 +54,6 @@ export function resolveGuestSchema(properties: Properties): GuestSchemaMapping {
     emailType: properties["Email"]?.type === "rich_text" ? "rich_text" : "email",
     statusType,
     initialStatusName: statusType === "status" ? "Not started" : "pending",
+    signedStatusName: statusType === "status" ? "Done" : "signed",
   };
 }

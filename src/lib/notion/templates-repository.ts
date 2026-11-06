@@ -2,7 +2,7 @@ import "server-only";
 
 import { isFullDataSource, isFullPage, type Client, type PageObjectResponse } from "@notionhq/client";
 
-import { defaultTemplateContent, type TemplateContent } from "../templates/content";
+import { defaultTemplateContent, defaultTemplateId, defaultTemplateName, systemSigningJournalContainerId, type TemplateContent } from "../templates/content";
 import type { SaveDraftInput, TemplateRecord, TemplateSummary } from "../templates/schema";
 import { deserializeTemplateContent, serializeTemplateContent } from "../templates/serialization";
 import { getNotionClient } from "./client";
@@ -15,6 +15,7 @@ type TemplatesClient = Pick<Client, "dataSources" | "pages">;
 
 export class NotionTemplatesRepository {
   private schemaExpiresAt = 0;
+  private defaultTemplatePromise?: Promise<TemplateRecord>;
 
   constructor(
     private readonly client: TemplatesClient,
@@ -30,13 +31,16 @@ export class NotionTemplatesRepository {
       do {
         const response = await this.client.dataSources.query({
           data_source_id: this.dataSourceId,
-          filter: includeInactive ? undefined : { property: "Status", select: { equals: "active" } },
+          filter: includeInactive ? undefined : { property: "Status", select: { equals: "Active" } },
           sorts: [{ timestamp: "last_edited_time", direction: "descending" }],
           page_size: 100,
           start_cursor: cursor,
           result_type: "page",
         });
-        for (const item of response.results) if (isFullPage(item)) results.push(mapTemplateSummary(item));
+        for (const item of response.results) if (isFullPage(item)) {
+          const summary = mapTemplateSummary(item);
+          if (summary.templateId !== systemSigningJournalContainerId) results.push(summary);
+        }
         cursor = response.has_more && results.length < 500 ? response.next_cursor ?? undefined : undefined;
       } while (cursor);
       return results;
@@ -63,6 +67,25 @@ export class NotionTemplatesRepository {
   async createDraft(name: string, content: TemplateContent = defaultTemplateContent): Promise<TemplateRecord> {
     await this.ensureSchema();
     return this.createPage(name, crypto.randomUUID(), 0, "draft", content);
+  }
+
+  async ensureDefaultTemplate(): Promise<TemplateRecord> {
+    if (this.defaultTemplatePromise) return this.defaultTemplatePromise;
+    const pending = this.ensureDefaultTemplateOnce();
+    this.defaultTemplatePromise = pending;
+    try { return await pending; }
+    finally { if (this.defaultTemplatePromise === pending) this.defaultTemplatePromise = undefined; }
+  }
+
+  private async ensureDefaultTemplateOnce(): Promise<TemplateRecord> {
+    await this.ensureSchema();
+    const existing = await this.queryTemplateFamily(defaultTemplateId);
+    if (existing.length) {
+      const selected = [...existing].sort((a, b) => b.version - a.version)[0];
+      if (!selected) throw new NotionServiceError("invalid_response", "The default agreement could not be selected.");
+      return this.get(selected.id);
+    }
+    return this.createPage(defaultTemplateName, defaultTemplateId, 1, "active", defaultTemplateContent);
   }
 
   async saveDraft(pageId: string, input: SaveDraftInput): Promise<TemplateRecord> {

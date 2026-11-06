@@ -22,7 +22,7 @@ describe("arrival mapping", () => {
   });
 
   it("creates a walk-in with Name title and Type", () => {
-    const mapping: GuestSchemaMapping = { emailType: "email", statusType: "status", initialStatusName: "Not started" };
+  const mapping: GuestSchemaMapping = { emailType: "email", statusType: "status", initialStatusName: "Not started", signedStatusName: "Done" };
     const result = walkInProperties({ name: "Walk In", arrivalDate: "2026-10-31", email: "", phone: "", vehicle: "" }, mapping);
     expect(result["Name"]).toEqual({ title: [{ type: "text", text: { content: "Walk In" } }] });
     expect(result["Type"]).toEqual({ select: { name: "Walk-In" } });

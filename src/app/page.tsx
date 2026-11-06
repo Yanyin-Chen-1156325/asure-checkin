@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { ButtonLink } from "@/components/ui/button-link";
 
 export default function HomePage() {
@@ -15,15 +13,7 @@ export default function HomePage() {
         <p className="mt-6 max-w-xl text-lg leading-8 text-(--muted)">
           A secure workspace for arrivals, agreement templates, and assisted iPad signing.
         </p>
-        <div className="mt-9 flex flex-wrap gap-3">
-          <ButtonLink href="/login">Sign in</ButtonLink>
-          <Link
-            className="inline-flex min-h-12 items-center rounded-xl px-5 font-semibold text-(--brand) hover:bg-(--accent)"
-            href="/sign/demo"
-          >
-            Preview signing shell
-          </Link>
-        </div>
+        <div className="mt-9"><ButtonLink href="/login">Sign in to motel desk</ButtonLink></div>
       </section>
     </main>
   );

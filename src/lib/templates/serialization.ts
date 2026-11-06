@@ -12,6 +12,20 @@ function canonicalize(value: unknown): unknown {
   return value;
 }
 
+function upgradeLegacyContent(value: unknown): unknown {
+  if (typeof value !== "object" || value === null || !("type" in value) || !("content" in value) || value.type !== "doc" || !Array.isArray(value.content)) return value;
+  const types = value.content.map((block) => typeof block === "object" && block !== null && "type" in block ? block.type : undefined);
+  if (types.includes("guestFields") || types.includes("acknowledgement") || types.includes("signature")) return value;
+  const content = value.content.filter((block) => {
+    const serialized = JSON.stringify(block);
+    return !serialized.includes('"key":"guest.') && !serialized.includes('"key":"signature.');
+  });
+  const titleIndex = content.findIndex((block) => typeof block === "object" && block !== null && "type" in block && block.type === "heading");
+  content.splice(titleIndex < 0 ? 0 : titleIndex + 1, 0, { type: "guestFields" });
+  content.push({ type: "acknowledgement" }, { type: "signature" });
+  return { ...value, content };
+}
+
 export function canonicalTemplateJson(content: TemplateContent): string {
   return JSON.stringify(canonicalize(templateContentSchema.parse(content)));
 }
@@ -25,5 +39,5 @@ export function deserializeTemplateContent(markdown: string): TemplateContent {
   const match = new RegExp(`${FORMAT_MARKER}\\s+([A-Za-z0-9_-]+)`).exec(markdown);
   if (!match?.[1]) throw new Error("Agreement content marker is missing.");
   const json = Buffer.from(match[1], "base64url").toString("utf8");
-  return templateContentSchema.parse(JSON.parse(json) as unknown);
+  return templateContentSchema.parse(upgradeLegacyContent(JSON.parse(json) as unknown));
 }

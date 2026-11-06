@@ -1,6 +1,6 @@
 # Motel Guest Agreement
 
-Step 1 project foundation for a responsive, secure motel guest agreement web application.
+Responsive motel arrival, Registration Card, iPad signing, and signed-record application backed by Notion.
 
 ## Local development
 
@@ -16,6 +16,7 @@ Requirements: Node.js 20.9 or newer and npm.
 npm run lint
 npm run typecheck
 npm test
+npm run test:e2e
 npm run build
 ```
 
@@ -27,10 +28,20 @@ Sessions are HMAC-signed JWTs with an eight-hour default maximum age, stored in 
 
 Login attempts are conservatively limited per proxy-provided client address. The limiter is process-local because this MVP does not add a distributed database or rate-limit service; deployments must also enable platform-level abuse protection. State-changing authenticated endpoints validate the request origin.
 
-Template and signing-operation Notion variables remain reserved for later milestones. No traditional database or Google Drive integration is used.
+No traditional database or Google Drive integration is used.
 
 ## Notion arrivals
 
 Step 3 uses the current data-source API for arrival-date filtering, walk-in creation, and contact updates. Complete the property and least-privilege connection setup in [`docs/NOTION_SETUP.md`](docs/NOTION_SETUP.md). Notion access remains server-only; browser code calls authenticated application endpoints and never receives the integration token or Notion page URLs.
 
-Step 4 adds the owner-only restricted Tiptap editor and immutable template publishing. Template content supports headings, paragraphs, bold, italic, bullets, and numbered lists. Scripts, links, arbitrary HTML/CSS, embeds, images, and complex tables are rejected at the server boundary. The same validated document renderer powers iPad and printable preview layouts; guest details and signature blocks remain system-generated.
+The owner-only restricted Tiptap editor supports headings, paragraphs, bold, italic, lists, simple tables, and allowlisted guest/signature placeholders. Scripts, links, arbitrary HTML/CSS, and embeds are rejected at the server boundary. Publishing creates immutable versions.
+
+Arrivals displays guest names plus a Walk-In choice. A short-lived signing token opens an isolated form for direct contact details, agreement review, and touch signature. The server creates an A4 PDF from the immutable template version, embeds the signature and timestamp, uploads it to the guest's `Signed PDF` property, and marks the record `Done`. Authenticated Records pages proxy PDF access without exposing the Notion token or stored file URL.
+
+The default template intentionally excludes booking source/reference, address, room, departure date, rate details, extras, and total charges.
+
+## Production operations
+
+Configure all variables documented in `.env.example`, use HTTPS, and keep every secret in the hosting provider’s encrypted server-side settings. The application validates all three Notion schemas when they are used. See [`docs/NOTION_SETUP.md`](docs/NOTION_SETUP.md) for exact properties and [`docs/OPERATIONS.md`](docs/OPERATIONS.md) for deployment, recovery, retention, and iPad guidance.
+
+The Signing Operations journal makes accepted signings recoverable and idempotent. Staff can retry `Needs Attention` records without asking the guest to sign again. The raw signature is removed from the journal after completion; the signed PDF and audit metadata remain in the Arrivals record.

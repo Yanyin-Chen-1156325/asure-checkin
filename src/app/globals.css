@@ -93,6 +93,142 @@ select {
 .tiptap ol,
 .agreement-document ol { list-style: decimal; }
 
+.tiptap table,
+.agreement-document table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+}
+
+.tiptap th, .tiptap td,
+.agreement-document th, .agreement-document td {
+  min-width: 7rem;
+  border: 1px solid var(--border);
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.tiptap th,
+.agreement-document th { width: 34%; background: var(--background); font-weight: 700; }
+.tiptap table p,
+.agreement-document table p { margin: 0; }
+.template-placeholder { border-radius: 0.3rem; background: var(--accent); padding: 0.1rem 0.25rem; color: var(--brand-strong); }
+.agreement-document > h1:first-child { text-align: center; }
+.agreement-document > h1:first-child + p { margin-bottom: 1.75rem; color: var(--muted); text-align: center; }
+
+.agreement-system-section { margin: 1.5rem 0; }
+.agreement-system-section > h2 { margin-bottom: 0.25rem; }
+.agreement-required-note { color: var(--muted); font-size: 0.85rem; }
+.agreement-required-note b,
+.agreement-form-field b,
+.agreement-acknowledgement b,
+.agreement-signature b { color: var(--danger); }
+
+.agreement-form-grid,
+.agreement-editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.agreement-form-field,
+.agreement-editor-field { display: block; }
+.agreement-form-field > span,
+.agreement-editor-label { display: block; margin-bottom: 0.45rem; font-weight: 700; }
+.agreement-form-field input,
+.agreement-editor-input {
+  display: flex;
+  min-height: 3.25rem;
+  width: 100%;
+  align-items: center;
+  border: 1.5px solid #aab8b2;
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.75rem 0.9rem;
+}
+.agreement-form-field input { outline: none; }
+.agreement-form-field input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px #cce8df; }
+.agreement-form-field input:disabled { background: #f3f6f4; color: var(--foreground); opacity: 1; }
+.agreement-editor-input { color: #7b8581; }
+
+.agreement-highlight-mark { background: transparent; color: inherit; }
+.tiptap strong .agreement-highlight-mark,
+.agreement-warning-block strong { font-weight: 400; }
+.agreement-warning-block,
+.agreement-warning-heading {
+  color: inherit;
+}
+.agreement-document .agreement-warning-heading { margin-top: 1.5rem; }
+.agreement-warning-list { padding: 0; }
+.agreement-warning-list ul,
+.agreement-warning-list ol { margin: 0.65rem 0; }
+
+.agreement-acknowledgement,
+.agreement-editor-acknowledgement {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin: 2rem 0 1.5rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+.agreement-acknowledgement input {
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-top: 0.15rem;
+  flex: none;
+  accent-color: var(--brand);
+}
+.agreement-editor-checkbox {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: none;
+  border: 1.5px solid #87938e;
+  border-radius: 0.25rem;
+}
+
+.agreement-signature { margin-top: 1.5rem; }
+.agreement-signature > p { color: var(--muted); font-size: 0.9rem; }
+.signature-canvas,
+.agreement-editor-signature {
+  display: grid;
+  height: 180px;
+  width: 100%;
+  place-items: center;
+  touch-action: none;
+  border: 2px dashed #aab8b2;
+  border-radius: 0.8rem;
+  background: white;
+  color: var(--muted);
+}
+.signature-clear {
+  min-height: 2.75rem;
+  margin-top: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+}
+
+.agreement-editor-system-block {
+  margin: 1.25rem 0;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: #fbfcfb;
+  padding: 1rem;
+}
+.agreement-editor-system-block h2 { margin-top: 0; }
+
+@media (max-width: 640px) {
+  .agreement-form-grid,
+  .agreement-editor-fields { grid-template-columns: 1fr; }
+}
+
 .tiptap p.is-editor-empty:first-child::before {
   float: left;
   height: 0;

@@ -4,10 +4,12 @@ import Placeholder from "@tiptap/extension-placeholder";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { TableKit } from "@tiptap/extension-table";
 import { useEffect, useState } from "react";
 
 import { TemplateDocument } from "./template-document";
 import { isTemplateContent, type TemplateContent } from "@/lib/templates/content";
+import { AcknowledgementNodeExtension, GuestFieldsNodeExtension, HighlightMarkExtension, SignatureNodeExtension } from "@/lib/templates/system-block-extensions";
 import type { TemplateRecord } from "@/lib/templates/schema";
 
 type ApiError = { message?: string; requestId?: string };
@@ -20,7 +22,7 @@ async function failure(response: Response): Promise<string> {
 export function TemplateEditor({ id }: Readonly<{ id: string }>) {
   const [template, setTemplate] = useState<TemplateRecord>();
   const [name, setName] = useState("");
-  const [preview, setPreview] = useState<"ipad" | "print" | null>(null);
+  const [printContent, setPrintContent] = useState<TemplateContent | null>(null);
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -32,6 +34,11 @@ export function TemplateEditor({ id }: Readonly<{ id: string }>) {
         heading: { levels: [1, 2, 3] }, blockquote: false, code: false, codeBlock: false,
         horizontalRule: false, strike: false, hardBreak: false, link: false, underline: false,
       }),
+      TableKit.configure({ table: { resizable: false } }),
+      HighlightMarkExtension,
+      GuestFieldsNodeExtension,
+      AcknowledgementNodeExtension,
+      SignatureNodeExtension,
       Placeholder.configure({ placeholder: "Write the complete agreement…" }),
     ],
     content: { type: "doc", content: [{ type: "paragraph" }] },
@@ -89,7 +96,13 @@ export function TemplateEditor({ id }: Readonly<{ id: string }>) {
     finally { setPending(false); }
   }
 
-  const content = currentContentForPreview(editor?.getJSON(), template?.content);
+  async function previewPdf() {
+    const previewWindow = window.open("about:blank", "_blank");
+    if (dirty && !(await save())) { previewWindow?.close(); return; }
+    if (previewWindow) previewWindow.location.href = `/api/templates/${encodeURIComponent(id)}/preview`;
+  }
+
+  const content = template?.status === "draft" ? null : currentContentForPreview(editor?.getJSON(), template?.content);
   if (error && !template) return <p className="mt-8 rounded-xl bg-red-50 p-4 text-[var(--danger)]">{error}</p>;
 
   return (
@@ -101,13 +114,19 @@ export function TemplateEditor({ id }: Readonly<{ id: string }>) {
         {template?.status === "draft" ? <><button className="min-h-12 rounded-xl border border-[var(--brand)] px-5 font-bold text-[var(--brand)]" disabled={pending} onClick={() => void save()} type="button">Save draft</button><button className="min-h-12 rounded-xl bg-[var(--brand)] px-5 font-bold text-white" disabled={pending} onClick={() => void publish()} type="button">Publish version</button></> : null}
       </div>
       {template?.status === "draft" ? <Toolbar editor={editor} /> : <p className="rounded-xl bg-[var(--background)] p-4 text-sm text-[var(--muted)]">Published and archived versions are read-only.</p>}
-      <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm sm:p-8"><EditorContent editor={editor} /></div>
-      <div className="flex flex-wrap gap-2">
-        <button className="min-h-11 rounded-lg border border-[var(--border)] px-4 font-bold" onClick={() => setPreview(preview === "ipad" ? null : "ipad")} type="button">iPad preview</button>
-        <button className="min-h-11 rounded-lg border border-[var(--border)] px-4 font-bold" onClick={() => setPreview(preview === "print" ? null : "print")} type="button">PDF/print preview</button>
-        {preview === "print" ? <button className="min-h-11 rounded-lg bg-[var(--brand)] px-4 font-bold text-white" onClick={() => window.print()} type="button">Print preview</button> : null}
+      <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm sm:p-8">
+        {template?.status === "draft" ? <EditorContent editor={editor} /> : content ? <TemplateDocument content={content} /> : null}
       </div>
-      {preview && content ? <section className={`print-preview mx-auto border border-[var(--border)] bg-white shadow-sm ${preview === "ipad" ? "max-w-3xl rounded-3xl p-6 sm:p-10" : "max-w-[210mm] p-[15mm]"}`}><TemplateDocument content={content} /><div className="mt-10 border-t pt-6 text-sm text-[var(--muted)]"><p><strong>Guest details and signature</strong></p><p className="mt-2">System-generated during signing; template authors cannot remove this block.</p></div></section> : null}
+      <div className="flex flex-wrap gap-2">
+        <button className="min-h-11 rounded-lg border border-[var(--border)] px-4 font-bold" disabled={pending} onClick={() => void previewPdf()} type="button">PDF preview</button>
+        <button className="min-h-11 rounded-lg bg-[var(--brand)] px-4 font-bold text-white" onClick={() => {
+          const printable = template?.status === "draft" ? currentContent() : content;
+          if (!printable) return;
+          setPrintContent(printable);
+          window.setTimeout(() => window.print(), 0);
+        }} type="button">Print</button>
+      </div>
+      {printContent ? <section className="print-preview mx-auto max-w-[210mm] border border-[var(--border)] bg-white p-6 shadow-sm sm:p-[15mm]"><TemplateDocument content={printContent} /></section> : null}
     </div>
   );
 }
@@ -124,8 +143,10 @@ function Toolbar({ editor }: Readonly<{ editor: Editor | null }>) {
     <button aria-pressed={editor.isActive("heading", { level: 2 })} className={button} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} type="button">Heading</button>
     <button aria-pressed={editor.isActive("bold")} className={button} onClick={() => editor.chain().focus().toggleBold().run()} type="button">Bold</button>
     <button aria-pressed={editor.isActive("italic")} className={button} onClick={() => editor.chain().focus().toggleItalic().run()} type="button">Italic</button>
+    <button aria-pressed={editor.isActive("highlight")} className={button} onClick={() => editor.chain().focus().toggleMark("highlight").run()} type="button">Warning highlight</button>
     <button aria-pressed={editor.isActive("bulletList")} className={button} onClick={() => editor.chain().focus().toggleBulletList().run()} type="button">Bullets</button>
     <button aria-pressed={editor.isActive("orderedList")} className={button} onClick={() => editor.chain().focus().toggleOrderedList().run()} type="button">Numbered</button>
+    <button className={button} onClick={() => editor.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run()} type="button">Insert table</button>
     <button className={button} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} type="button">Undo</button>
     <button className={button} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} type="button">Redo</button>
   </div>;

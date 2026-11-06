@@ -50,6 +50,22 @@ function client(pageToRetrieve: PageObjectResponse) {
 }
 
 describe("NotionTemplatesRepository", () => {
+  it("reuses the existing default template instead of creating a duplicate", async () => {
+    const notion = client(page("active", 1));
+    const repository = new NotionTemplatesRepository(notion as never, "templates-source");
+    await repository.ensureDefaultTemplate();
+    expect(notion.pages.create).not.toHaveBeenCalled();
+  });
+
+  it("creates the default template when the data source is empty", async () => {
+    const notion = client(page("active", 1));
+    notion.dataSources.query.mockResolvedValueOnce({ object: "list", results: [], has_more: false, next_cursor: null });
+    const repository = new NotionTemplatesRepository(notion as never, "templates-source");
+    await Promise.all([repository.ensureDefaultTemplate(), repository.ensureDefaultTemplate()]);
+    expect(notion.pages.create).toHaveBeenCalledTimes(1);
+    expect(notion.pages.create).toHaveBeenCalledWith(expect.objectContaining({ markdown: expect.stringContaining("ASURE_TEMPLATE_JSON_V1") }));
+  });
+
   it("never overwrites published content", async () => {
     const notion = client(page("active", 1));
     const repository = new NotionTemplatesRepository(notion as never, "templates-source");

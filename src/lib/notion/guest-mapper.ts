@@ -17,6 +17,8 @@ function plainText(property: Property | undefined): string {
   return "";
 }
 
+export function plainProperty(property: Property | undefined): string { return plainText(property); }
+
 function email(property: Property | undefined): string {
   if (!property) return "";
   if (property.type === "email") return property.email ?? "";
@@ -29,9 +31,11 @@ export function mapGuestPage(page: PageObjectResponse): Arrival {
   const phone = properties["Phone"];
   const type = properties["Type"];
   const status = properties["Signing Status"];
+  const lastError = plainText(properties["Last Error"]);
   const statusName = status?.type === "select" ? status.select?.name : status?.type === "status" ? status.status?.name : undefined;
   const mappedStatus = statusName === "Not started" || statusName === "pending" ? "pending"
-    : statusName === "Pending" || statusName === "in_progress" ? "in_progress"
+    : statusName === "Pending" ? (lastError ? "needs_attention" : "in_progress")
+    : statusName === "in_progress" ? "in_progress"
     : statusName === "Done" || statusName === "signed" ? "signed"
     : statusName === "upload_pending" ? "upload_pending"
     : statusName === "needs_attention" ? "needs_attention" : undefined;

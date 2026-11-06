@@ -40,29 +40,11 @@ export function LoginForm({ returnTo = "/admin" }: Readonly<{ returnTo?: Route }
     <form className="mt-8 space-y-5" onSubmit={submit}>
       <div>
         <label className="mb-2 block text-sm font-bold" htmlFor="username">Username</label>
-        <input
-          autoComplete="username"
-          autoFocus
-          className="min-h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-base"
-          disabled={pending}
-          id="username"
-          maxLength={128}
-          name="username"
-          required
-        />
+        <input autoComplete="username" autoFocus className="min-h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-base" disabled={pending} id="username" maxLength={128} name="username" required />
       </div>
       <div>
         <label className="mb-2 block text-sm font-bold" htmlFor="password">Password</label>
-        <input
-          autoComplete="current-password"
-          className="min-h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-base"
-          disabled={pending}
-          id="password"
-          maxLength={1024}
-          name="password"
-          required
-          type="password"
-        />
+        <input autoComplete="current-password" className="min-h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-base" disabled={pending} id="password" maxLength={1024} name="password" required type="password" />
       </div>
       {error ? <p aria-live="polite" className="rounded-xl bg-red-50 p-3 text-sm text-[var(--danger)]">{error}</p> : null}
       <button className="min-h-12 w-full rounded-xl bg-[var(--brand)] px-5 font-bold text-white hover:bg-[var(--brand-strong)] disabled:opacity-60" disabled={pending} type="submit">
